@@ -81,7 +81,7 @@ class MDMModel(nn.Module):
             )
         checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=True)
         
-        model_config = checkpoint['model_config']
+        model_config = dict(checkpoint['model_config'])
         if model_kwargs is not None:
             model_config.update(model_kwargs)
         model = cls(**model_config)

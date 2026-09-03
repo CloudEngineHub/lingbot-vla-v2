@@ -116,9 +116,10 @@ class DinoVisionTransformer(nn.Module):
 
         self.depth_emb_mode = depth_emb_mode
         if self.depth_emb_mode == 'conv_1c':
-            self.depth_patch_embed = embed_layer(img_size=img_size, patch_size=patch_size, in_chans=1, embed_dim=embed_dim)
+            # Match the published checkpoint name; the input is still one depth channel.
+            self.depth_mask_patch_embed = embed_layer(img_size=img_size, patch_size=patch_size, in_chans=1, embed_dim=embed_dim)
         else:
-            self.depth_patch_embed = None
+            self.depth_mask_patch_embed = None
 
         self.img_depth_fuse_mode = img_depth_fuse_mode
         
@@ -284,8 +285,8 @@ class DinoVisionTransformer(nn.Module):
 
         # patchify, embed image tokens and depth tokens
         x_img = self.patch_embed(x_img) # batch, length_img, dim
-        assert self.depth_patch_embed is not None
-        x_depth = self.depth_patch_embed(x_depth) # batch, length_depth, dim
+        assert self.depth_mask_patch_embed is not None
+        x_depth = self.depth_mask_patch_embed(x_depth) # batch, length_depth, dim
         assert depth_patch_num_h * depth_patch_num_w == x_depth.shape[1]
 
         # get full pose enc of img and depth
