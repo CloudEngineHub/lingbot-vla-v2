@@ -5,6 +5,8 @@ This guide explains how to process raw data from **RoboTwin** and convert it int
 ## 1. Clone the Official RoboTwin Repository
 ```bash
 git clone git@github.com:RoboTwin-Platform/RoboTwin.git
+cd RoboTwin
+git checkout 13c3c47ff4312dd62484bcd51be034af55c062d1
 ```
 
 ## 2. Create Required Directories
@@ -115,6 +117,11 @@ starts the next. All flags below also accept the equivalent environment variable
 3. **Qwen3-VL backbone** checkpoint used by the VLA vision-language encoder (`QWEN3VL_PATH`).
 4. **Your trained HF checkpoint** (`model_path`), e.g. `.../global_step_xxxxx/hf_ckpt`.
 
+> [!IMPORTANT]
+> Release validation of the published checkpoint uses **FP32 inference**. The lower-memory
+> BF16 mode is useful for pipeline checks, but can produce materially different success
+> rates.
+
 > The launcher **auto-copies** the eval client (`eval_policy_client_lingbotvla.py` + the small
 > `deploy/` helpers) from this repo into `<RoboTwin>/script/`, and **self-heals** the curobo
 > embodiment `.yml` and editable-install `.pth` paths to point at the RoboTwin checkout you
@@ -126,6 +133,7 @@ starts the next. All flags below also accept the equivalent environment variable
 
 ```bash
 # from this repo's root (so inference_workdir = current working dir)
+QWEN3VL_PATH=/path/to/Qwen3-VL-4B-Instruct \
 bash experiment/robotwin/start_robotwin_infer_and_eval.sh \
     --model_path     /path/to/your/checkpoint/hf_ckpt \
     --eval_workdir   /path/to/RoboTwin \
@@ -133,25 +141,34 @@ bash experiment/robotwin/start_robotwin_infer_and_eval.sh \
     --conda_sh       /path/to/miniconda3/etc/profile.d/conda.sh \
     --inference_env  lingbotvla \
     --sim_env        RoboTwin \
-    --num_tasks 50 --num_gpus 4 --num_per_gpu 1
+    --task_config    demo_clean \
+    --num_tasks 50 --num_gpus 4 --num_per_gpu 1 \
+    --use_bf16 False --use_fp32 True
 ```
+
+Use `--task_config demo_randomized` for the randomized benchmark.
 
 **GPU / concurrency**
 - `num_gpus` × `num_per_gpu` = number of concurrent sim slots (one inference server per slot).
-- `--num_per_gpu 1` is the **safe** default: one ~12.6 GB Qwen3-VL server + one sim per 32 GB card.
-- `--num_per_gpu 2` roughly halves wall-clock but is memory-tight and can OOM on 32 GB cards
-  (the script retries each task up to 3 times, but persistent OOM skips the task).
+- `--num_per_gpu 1` is the safe starting point. In our current software stack, one FP32
+  policy server plus its simulator uses roughly 32 GB, so leave additional headroom.
+- A 24 GB GPU generally requires BF16 (`--use_bf16 True --use_fp32 False`), which does not
+  reproduce the published FP32 benchmark. Increasing `num_per_gpu` can OOM; the script
+  retries each task up to 3 times, but persistent OOM skips the task.
 
 ### Smoke test (1 task, 1 GPU)
 
 Verify the pipeline end-to-end without waiting for the full run:
 
 ```bash
+QWEN3VL_PATH=/path/to/Qwen3-VL-4B-Instruct \
 bash experiment/robotwin/start_robotwin_infer_and_eval.sh \
     --model_path   /path/to/your/checkpoint/hf_ckpt \
     --eval_workdir /path/to/RoboTwin \
     --conda_sh     /path/to/miniconda3/etc/profile.d/conda.sh \
-    --num_tasks 1 --num_gpus 1 --num_per_gpu 1
+    --task_config  demo_clean \
+    --num_tasks 1 --num_gpus 1 --num_per_gpu 1 \
+    --use_bf16 False --use_fp32 True
 ```
 
 The run dir is printed at startup (`Run directory: ...`). You should see `Success rate: N/N =>
@@ -162,7 +179,7 @@ the full run.
 ### Output layout
 
 ```
-<output_base>/<exp>_<step>k_<timestamp>/
+<output_base>/<exp>_<step>k_<task_config>_<timestamp>/
 ├── stats.txt                 # final per-task table + overall success rate
 ├── inference_logs/           # one log per inference server / port
 ├── eval_logs/                # one log per task (per-step progress, success rate)
@@ -178,6 +195,9 @@ the full run.
 | `--start_port` | base port for inference servers (default 9330, slot *i* uses base + i) |
 | `--use_length` | action-chunk length forwarded to the policy (default 50) |
 | `--robo_name` | robot config name (default `robotwin`) |
+| `--task_config` | RoboTwin setting: `demo_clean` or `demo_randomized` |
+| `--use_bf16` / `--use_fp32` | inference precision; release reproduction uses `False` / `True` |
+| `--use_compile` | enable lazy `torch.compile` (default `True`; first request takes longer) |
 | `--inference_script` | inference-side module (default `deploy/lingbot_vla_v2_policy.py`) |
 
 ### Monitor / stop
