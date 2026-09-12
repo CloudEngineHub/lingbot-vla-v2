@@ -188,7 +188,6 @@ bash experiment/robotwin/start_robotwin_infer_and_eval.sh \
   --task_config demo_clean \
   --num_gpus 8 \
   --num_per_gpu 1 \
-  --use_bf16 False \
   --use_fp32 True
 ```
 

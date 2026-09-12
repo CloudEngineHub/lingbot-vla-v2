@@ -143,7 +143,7 @@ bash experiment/robotwin/start_robotwin_infer_and_eval.sh \
     --sim_env        RoboTwin \
     --task_config    demo_clean \
     --num_tasks 50 --num_gpus 4 --num_per_gpu 1 \
-    --use_bf16 False --use_fp32 True
+    --use_fp32 True
 ```
 
 Use `--task_config demo_randomized` for the randomized benchmark.
@@ -168,7 +168,7 @@ bash experiment/robotwin/start_robotwin_infer_and_eval.sh \
     --conda_sh     /path/to/miniconda3/etc/profile.d/conda.sh \
     --task_config  demo_clean \
     --num_tasks 1 --num_gpus 1 --num_per_gpu 1 \
-    --use_bf16 False --use_fp32 True
+    --use_fp32 True
 ```
 
 The run dir is printed at startup (`Run directory: ...`). You should see `Success rate: N/N =>
