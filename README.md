@@ -187,8 +187,7 @@ bash experiment/robotwin/start_robotwin_infer_and_eval.sh \
   --output_base /path/to/your/eval_output \
   --task_config demo_clean \
   --num_gpus 8 \
-  --num_per_gpu 1 \
-  --use_fp32 True
+  --num_per_gpu 1
 ```
 
 For randomized evaluation, use the same command with `--task_config demo_randomized`. `num_gpus` is the number of GPUs to use, and `num_per_gpu` is the number of resident inference servers (and concurrent simulation tasks) on each GPU. Tune both values for your GPU memory and host load; one FP32 server needs substantially more memory than BF16.

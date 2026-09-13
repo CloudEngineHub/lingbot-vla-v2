@@ -142,16 +142,16 @@ bash experiment/robotwin/start_robotwin_infer_and_eval.sh \
     --inference_env  lingbotvla \
     --sim_env        RoboTwin \
     --task_config    demo_clean \
-    --num_tasks 50 --num_gpus 4 --num_per_gpu 1 \
-    --use_fp32 True
+    --num_tasks 50 --num_gpus 4 --num_per_gpu 1
 ```
 
 Use `--task_config demo_randomized` for the randomized benchmark.
 
 **GPU / concurrency**
 - `num_gpus` × `num_per_gpu` = number of concurrent sim slots (one inference server per slot).
-- One FP32 policy server plus its simulator uses roughly 32 GB. An excessively large `num_per_gpu` can lead to OOM; the script 
-  retries each task up to 3 times, but persistent OOM skips the task.
+- `--num_per_gpu 1` is the safe starting point. In our current software stack, one FP32
+  policy server plus its simulator uses roughly 32 GB, so leave additional headroom.
+- A 24 GB GPU generally requires BF16 (`--use_bf16 True --use_fp32 False`), which does not reproduce the published FP32 benchmark. Increasing `num_per_gpu` can OOM; the script retries each task up to 3 times, but persistent OOM skips the task.
 
 ### Smoke test (1 task, 1 GPU)
 
@@ -164,8 +164,7 @@ bash experiment/robotwin/start_robotwin_infer_and_eval.sh \
     --eval_workdir /path/to/RoboTwin \
     --conda_sh     /path/to/miniconda3/etc/profile.d/conda.sh \
     --task_config  demo_clean \
-    --num_tasks 1 --num_gpus 1 --num_per_gpu 1 \
-    --use_fp32 True
+    --num_tasks 1 --num_gpus 1 --num_per_gpu 1
 ```
 
 The run dir is printed at startup (`Run directory: ...`). You should see `Success rate: N/N =>
