@@ -175,16 +175,22 @@ python scripts/open_loop_eval.py \
 
 ### RoboTwin Deployment
 
-After making the RoboTwin simulation dependencies compatible with the model inference dependencies in a single environment, we provide a one-command evaluation script for all 50 RoboTwin 2.0 tasks:
+After installing RoboTwin 2.0 and the LingBot-VLA inference environment, use the launcher below to evaluate all 50 tasks. For reproducible benchmark comparisons, use the [RoboTwin setup guide](experiment/robotwin/README.md), including its pinned RoboTwin revision. Release validation of the published checkpoint uses **FP32 inference**; BF16 uses less GPU memory, but can produce materially different success rates. `--model_path` must point to the exported `hf_ckpt` directory rather than the model repository root.
+
+Clean evaluation:
+
 ```bash
 QWEN3VL_PATH=/path/to/Qwen3-VL-4B-Instruct/ \
-EVAL_WORKDIR=/path/to/Robotwin_code/ \
+EVAL_WORKDIR=/path/to/RoboTwin/ \
 bash experiment/robotwin/start_robotwin_infer_and_eval.sh \
-  --model_path /path/to/your/post_training_checkpoint \
+  --model_path /path/to/lingbot-vla-v2-6b-robotwin/checkpoints/global_step_50000/hf_ckpt/ \
   --output_base /path/to/your/eval_output \
-  --num_per_gpu 2
+  --task_config demo_clean \
+  --num_gpus 8 \
+  --num_per_gpu 1
 ```
-`num_per_gpu` specifies how many tasks can be evaluated concurrently on each GPU. Tune it according to your available GPU memory and the communication load your machine can handle.
+
+For randomized evaluation, use the same command with `--task_config demo_randomized`. `num_gpus` is the number of GPUs to use, and `num_per_gpu` is the number of resident inference servers (and concurrent simulation tasks) on each GPU. Tune both values for your GPU memory and host load; one FP32 server needs substantially more memory than BF16.
 
 ### Real-Robot Deployment
 

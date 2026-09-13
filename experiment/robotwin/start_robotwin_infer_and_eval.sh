@@ -9,8 +9,8 @@
 #   --inference_script  inference-side module path (default: deploy/lingbot_vla_v2_policy.py)
 #   --inference_workdir inference-side working dir (default: current working dir)
 #   --eval_workdir      sim-side (RoboTwin repo) working dir (REQUIRED; or $EVAL_WORKDIR; default placeholder /path/to/RoboTwin)
-#   --inference_env     inference-side conda env (default: lingbotvla_open_test, or $INFERENCE_ENV)
-#   --sim_env           sim-side conda env (default: robotwinTest, or $SIM_ENV)
+#   --inference_env     inference-side conda env (default: lingbotvla, or $INFERENCE_ENV)
+#   --sim_env           sim-side conda env (default: RoboTwin, or $SIM_ENV)
 #   --conda_sh          conda.sh path to source (default: /path/to/miniconda3/etc/profile.d/conda.sh, or $CONDA_SH)
 #   --output_base       result output path (default: /path/to/VLABenchmarkResult, or $OUTPUT_BASE)
 #   --start_port        starting port (default: 9330)
@@ -22,9 +22,10 @@
 #   --robo_name         robot config name (default: robotwin)
 #   --video_fps         video recording fps (default: 10)
 #   --no_video          disable video recording to speed up simulation
-#   --use_bf16          use bfloat16 inference (default: True)
-#   --use_fp32          use float32 inference (default: False)
+#   --use_bf16          use bfloat16 inference (default: False)
+#   --use_fp32          use float32 inference (default: True; release reproduction setting)
 #   --use_compile       enable model compile in policy inference (default: True)
+#   --task_config       RoboTwin task config (default: demo_clean, or $TASK_CONFIG)
 #   --keep_inference    keep inference servers resident after simulation
 #
 # Examples:
@@ -51,15 +52,15 @@ num_tasks=50
 num_gpus=1
 num_per_gpu=1
 use_length=50
-use_bf16=True
-use_fp32=False
+use_bf16=False
+use_fp32=True
 use_compile=True
 robo_name="robotwin"
 video_fps=10
 enable_video=True
 keep_inference=false
 enable_video=False
-task_config="demo_clean"
+task_config="${TASK_CONFIG:-demo_clean}"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -76,7 +77,9 @@ while [[ $# -gt 0 ]]; do
         --use_length)        use_length="$2";        shift 2 ;;
         --use_bf16)          use_bf16="$2";        shift 2 ;;
         --use_fp32)          use_fp32="$2";        shift 2 ;;
+        --use_compile)       use_compile="$2";     shift 2 ;;
         --robo_name)         robo_name="$2";         shift 2 ;;
+        --task_config)       task_config="$2";       shift 2 ;;
         --video_fps)         video_fps="$2";         shift 2 ;;
         --no_video)          enable_video=False;     shift ;;
         --keep_inference)    keep_inference=true;    shift ;;
@@ -99,9 +102,11 @@ while [[ $# -gt 0 ]]; do
             echo "  --num_gpus          total GPUs (default: 1)"
             echo "  --num_per_gpu       inference servers per GPU (default: 1)"
             echo "  --use_length        chunk length (default: 50)"
-            echo "  --use_bf16          use bfloat16 inference (default: True)"
-            echo "  --use_fp32          use float32 inference (default: False)"
+            echo "  --use_bf16          use bfloat16 inference (default: False)"
+            echo "  --use_fp32          use float32 inference (default: True; release reproduction setting)"
+            echo "  --use_compile       enable model compile (default: True)"
             echo "  --robo_name         robot config name (default: robotwin)"
+            echo "  --task_config       RoboTwin task config (default: demo_clean)"
             echo "  --keep_inference    keep inference servers resident after simulation"
             echo "  --video_fps         video recording fps (default: 10)"
             echo "  --no_video          disable video recording to speed up simulation"
@@ -218,6 +223,7 @@ for i in $(seq 0 $((num_tasks-1))); do
 done
 echo -e "\033[36mTasks this run (${num_tasks}): ${task_queue[*]}\033[0m"
 echo -e "\033[36mInference config: ${num_gpus} GPU x ${num_per_gpu} servers/GPU = ${num_slots} slots\033[0m"
+echo -e "\033[36mInference precision: use_bf16=${use_bf16}, use_fp32=${use_fp32}, use_compile=${use_compile}\033[0m"
 
 # ===== Common variables =====
 batch_time=$(date +%Y%m%d_%H%M%S)
@@ -269,6 +275,7 @@ for slot in $(seq 0 $((num_slots-1))); do
         --use_length '${use_length}' \
         --use_bf16 "${use_bf16}" \
         --use_fp32 "${use_fp32}" \
+        --use_compile "${use_compile}" \
         --port '${port}'" > "$log_file" 2>&1 &
 
     pid=$!
@@ -579,6 +586,7 @@ echo -e "\033[36mGenerating stats file: ${stats_file}\033[0m"
     echo "  Tasks: ${num_tasks}"
     echo "  Task Config: ${task_config}"
     echo "  Inference: ${num_gpus} GPU x ${num_per_gpu}/GPU = ${num_slots} slots"
+    echo "  Precision: use_bf16=${use_bf16}, use_fp32=${use_fp32}, use_compile=${use_compile}"
     echo "  Result: ${completed} done, ${skipped} skipped"
     echo "============================================"
     echo ""
