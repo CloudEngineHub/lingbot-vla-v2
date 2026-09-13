@@ -150,10 +150,7 @@ Use `--task_config demo_randomized` for the randomized benchmark.
 
 **GPU / concurrency**
 - `num_gpus` × `num_per_gpu` = number of concurrent sim slots (one inference server per slot).
-- `--num_per_gpu 1` is the safe starting point. In our current software stack, one FP32
-  policy server plus its simulator uses roughly 32 GB, so leave additional headroom.
-- A 24 GB GPU generally requires BF16 (`--use_bf16 True --use_fp32 False`), which does not
-  reproduce the published FP32 benchmark. Increasing `num_per_gpu` can OOM; the script
+- One FP32 policy server plus its simulator uses roughly 32 GB. An excessively large `num_per_gpu` can lead to OOM; the script 
   retries each task up to 3 times, but persistent OOM skips the task.
 
 ### Smoke test (1 task, 1 GPU)
