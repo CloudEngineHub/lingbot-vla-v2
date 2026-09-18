@@ -154,6 +154,8 @@ bash train.sh tasks/vla/train_lingbotvla.py ./configs/vla/robotwin/robotwin.yaml
 The post-training config uses sequence-wise auxiliary loss (`sequence_wise_mode: "per_sequence"`, `sequence_wise_loss_coeff: 1e-3`) together with z-loss (`router_z_loss_coeff: 1e-4`) for MoE routing. These terms can be adjusted or disabled depending on the downstream task. To use a loss-free routing setup, comment out the sequence-wise auxiliary loss and z-loss options, and set `bias_update_speed: 0.00025`.
 The post-training config also enables the Muon optimizer. Muon can produce a better-converged loss, but it increases training time. To use the default AdamW optimizer instead, comment out `optimizer: muon`.
 
+We also support **Distributed Muon**, which optimizes Muon training efficiency by distributing optimizer computation across GPUs and overlapping communication with computation. See [robotwin_dist_muon.yaml](configs/vla/robotwin/robotwin_dist_muon.yaml) for a complete example and optimizer parameter settings. This implementation requires FSDP2 with at least two data-parallel ranks.
+
 For real-world scenarios, see the native-depth training configuration [real_robot.yaml](configs/vla/real_robot/real_robot.yaml). For detailed explanations of batch size, gradient accumulation, checkpointing, depth/video distillation, MoE, and optimizer settings, see [Training_Config.md](configs/vla/Training_Config.md).
 
 ## Evaluation and Deployment
