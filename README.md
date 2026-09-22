@@ -24,7 +24,7 @@ Compared with LingBot-VLA 1.0, LingBot-VLA 2.0 improves three core capabilities:
 
 ## News
 
-- **[2026-09-22]** Added **Distributed Muon** to improve training efficiency. Single-node H20 post-training iteration time decreases from **5.93 s/it to 4.31 s/it**.
+- **[2026-09-22]** Added **Distributed Muon** to improve training efficiency. It improves single-node H20 post-training speed by **37.6%** over Muon.
 - **[2026-07-25]** RoboTwin post-training weights: [lingbot-vla-v2-6b-robotwin](https://huggingface.co/robbyant/lingbot-vla-v2-6b-robotwin).
 - **[2026-07-08]** LingBot-VLA 2.0 technical report and pre-trained weights are prepared.
 
@@ -157,19 +157,12 @@ The post-training config also enables the Muon optimizer. Muon can produce a bet
 
 We also support **Distributed Muon**, adapted from [TorchTitan's FlexShard implementation](https://github.com/pytorch/torchtitan/tree/496b11d43860bb8d27b54568c76db6310ae7f55e/torchtitan/distributed/flex_shard), to improve training efficiency. See [robotwin_dist_muon.yaml](configs/vla/robotwin/robotwin_dist_muon.yaml) for an example and optimizer parameter settings. This implementation requires FSDP2 with at least two data-parallel ranks.
 
-RoboTwin 2.0 success rates after post-training on clean and randomized data:
+Comparison of RoboTwin 2.0 success rates after post-training on clean and randomized data, and single-node post-training speed on NVIDIA H20 GPUs:
 
-| Optimizer | Clean success rate (%) | Randomized success rate (%) |
-| :--- | ---: | ---: |
-| Muon | 93.52 | 92.80 |
-| Distributed Muon | 91.56 | 91.34 |
-
-Single-node post-training speed on NVIDIA H20 GPUs (lower iteration time is better):
-
-| Optimizer | Iteration time (s/it) |
-| :--- | ---: |
-| Muon | 5.93 |
-| Distributed Muon | 4.31 |
+| Optimizer | Clean | Randomized | iteration time (s/it) |
+| :--- | :---: | :---: | :---: |
+| Muon | 93.52 | 92.80 | 5.93 |
+| Distributed Muon | 91.56 | 91.34 | 4.31 |
 
 The parameter settings in [robotwin_dist_muon.yaml](configs/vla/robotwin/robotwin_dist_muon.yaml) are provided as an example for a fair comparison with the Muon optimizer. You can adjust the optimizer settings and other parameters to suit your setup and pursue better performance.
 
